@@ -215,6 +215,7 @@
 // ../../data/profiles/demo-auth.yaml
 // ../../data/profiles/demo.yaml
 // ../../data/profiles/minimal.yaml
+// ../../data/profiles/remote.yaml
 // ../../data/profiles/sds.yaml
 // ../../data/translateConfig/translateConfig-1.3.yaml
 // ../../data/translateConfig/translateConfig-1.4.yaml
@@ -7331,10 +7332,6 @@ spec:
           - --envoyAccessLogServiceAddress
           - {{ .Values.global.proxy.envoyAccessLogService.host }}:{{ .Values.global.proxy.envoyAccessLogService.port }}
         {{- end }}
-        {{- if $gateway.applicationPorts }}
-          - --applicationPorts
-          - "{{ $gateway.applicationPorts }}"
-        {{- end }}
           - --proxyAdminPort
           - "15000"
           - --statusPort
@@ -8252,14 +8249,6 @@ gateways:
     certificates: false
     tls: false
 
-    # Ports to explicitly check for readiness. If configured, the readiness check will expect a
-    # listener on these ports. A comma separated list is expected, such as "80,443".
-    #
-    # Warning: If you do not have a gateway configured for the ports provided, this check will always
-    # fail. This is intended for use cases where you always expect to have a listener on the port,
-    # such as 80 or 443 in typical setups.
-    applicationPorts: ""
-
     # Telemetry addon gateways example config
     telemetry_addon_gateways:
       tracing_gateway:
@@ -8934,8 +8923,6 @@ var _chartsIstioControlIstioAutoinjectFilesInjectionTemplateYaml = []byte(`templ
   {{- if (ne (annotation .ObjectMeta "status.sidecar.istio.io/port" .Values.global.proxy.statusPort) "0") }}
     - --statusPort
     - "{{ annotation .ObjectMeta `+"`"+`status.sidecar.istio.io/port`+"`"+` .Values.global.proxy.statusPort }}"
-    - --applicationPorts
-    - "{{ annotation .ObjectMeta `+"`"+`readiness.status.sidecar.istio.io/applicationPorts`+"`"+` (applicationPorts .Spec.Containers) }}"
   {{- end }}
   {{- if .Values.global.trustDomain }}
     - --trust-domain={{ .Values.global.trustDomain }}
@@ -8999,8 +8986,6 @@ var _chartsIstioControlIstioAutoinjectFilesInjectionTemplateYaml = []byte(`templ
       value: "{{ .Values.global.sds.enabled }}"
     - name: ISTIO_META_INTERCEPTION_MODE
       value: "{{ or (index .ObjectMeta.Annotations `+"`"+`sidecar.istio.io/interceptionMode`+"`"+`) .ProxyConfig.InterceptionMode.String }}"
-    - name: ISTIO_META_INCLUDE_INBOUND_PORTS
-      value: "{{ annotation .ObjectMeta `+"`"+`traffic.sidecar.istio.io/includeInboundPorts`+"`"+` (applicationPorts .Spec.Containers) }}"
     {{- if .Values.global.network }}
     - name: ISTIO_META_NETWORK
       value: "{{ .Values.global.network }}"
@@ -36719,7 +36704,7 @@ spec:
           address: "$(HOST_IP):8126"
       mtls:
         enabled: false
-        auto: false
+        auto: true
       imagePullSecrets: []
       arch:
         amd64: 2
@@ -37436,6 +37421,59 @@ func profilesMinimalYaml() (*asset, error) {
 	}
 
 	info := bindataFileInfo{name: "profiles/minimal.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var _profilesRemoteYaml = []byte(`apiVersion: install.istio.io/v1alpha2
+kind: IstioControlPlane
+spec:
+  trafficManagement:
+    enabled: false
+
+  policy:
+    enabled: false
+
+  telemetry:
+    enabled: false
+
+  configManagement:
+    enabled: false
+
+  autoInjection:
+    enabled: false
+
+  gateways:
+    enabled: false
+
+  values:
+    pilot:
+      configSource:
+        subscribedResources:
+
+    security:
+      createMeshPolicy: false
+
+    prometheus:
+      enabled: false
+
+    global:
+      istioRemote: true
+      enableTracing: false
+      network: ""
+`)
+
+func profilesRemoteYamlBytes() ([]byte, error) {
+	return _profilesRemoteYaml, nil
+}
+
+func profilesRemoteYaml() (*asset, error) {
+	bytes, err := profilesRemoteYamlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "profiles/remote.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -38238,6 +38276,7 @@ var _bindata = map[string]func() (*asset, error){
 	"profiles/demo-auth.yaml": profilesDemoAuthYaml,
 	"profiles/demo.yaml": profilesDemoYaml,
 	"profiles/minimal.yaml": profilesMinimalYaml,
+	"profiles/remote.yaml": profilesRemoteYaml,
 	"profiles/sds.yaml": profilesSdsYaml,
 	"translateConfig/translateConfig-1.3.yaml": translateconfigTranslateconfig13Yaml,
 	"translateConfig/translateConfig-1.4.yaml": translateconfigTranslateconfig14Yaml,
@@ -38592,6 +38631,7 @@ var _bintree = &bintree{nil, map[string]*bintree{
 		"demo-auth.yaml": &bintree{profilesDemoAuthYaml, map[string]*bintree{}},
 		"demo.yaml": &bintree{profilesDemoYaml, map[string]*bintree{}},
 		"minimal.yaml": &bintree{profilesMinimalYaml, map[string]*bintree{}},
+		"remote.yaml": &bintree{profilesRemoteYaml, map[string]*bintree{}},
 		"sds.yaml": &bintree{profilesSdsYaml, map[string]*bintree{}},
 	}},
 	"translateConfig": &bintree{nil, map[string]*bintree{
