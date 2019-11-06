@@ -10,9 +10,6 @@ autoInjection:
             maxUnavailable: 25%
   enabled: true
 cni:
-  components:
-    cni:
-      enabled: false
   enabled: false
 configManagement:
   components:
@@ -321,15 +318,7 @@ values:
       amd64: 2
       ppc64le: 2
       s390x: 2
-    certificates:
-    - dnsNames:
-      - istio-galley.istio-system.svc
-      - istio-galley.istio-system
-      secretName: dns.istio-galley-service-account
-    - dnsNames:
-      - istio-sidecar-injector.istio-system.svc
-      - istio-sidecar-injector.istio-system
-      secretName: dns.istio-sidecar-injector-service-account
+    certificates: []
     configValidation: true
     controlPlaneSecurityEnabled: true
     defaultNodeSelector: {}
