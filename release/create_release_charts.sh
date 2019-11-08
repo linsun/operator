@@ -19,7 +19,7 @@ set -o errexit
 set -o pipefail
 
 TEMP_DIR_DEFAULT="/tmp"
-INSTALLER_CHARTS=(crds gateways istio-cni istiocoredns istio-telemetry istio-control istio-policy security)
+INSTALLER_CHARTS=(base gateways istio-cni istiocoredns istio-telemetry istio-control istio-policy security)
 INSTALLER_REPO="installer"
 
 function usage() {
@@ -71,14 +71,11 @@ function copy_installer_charts() {
     done
 }
 
-function copy_profiles() {
+function copy_operator_data() {
     cp -R "${OPERATOR_BASE_DIR}/data/profiles" "${OUTPUT_DIR}"
-}
-
-function copy_versions_files() {
+    cp -R "${OPERATOR_BASE_DIR}/data/examples" "${OUTPUT_DIR}"
     cp "${OPERATOR_BASE_DIR}/version/versions.yaml" "${OUTPUT_DIR}"
 }
 
 copy_installer_charts
-copy_profiles
-copy_versions_files
+copy_operator_data

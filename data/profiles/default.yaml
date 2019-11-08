@@ -305,7 +305,7 @@ spec:
           requests:
             cpu: 10m
             memory: 10Mi
-      imagePullPolicy: Always
+      imagePullPolicy: IfNotPresent
       certificates: []
       operatorManageWebhooks: false
       controlPlaneSecurityEnabled: true
@@ -348,12 +348,14 @@ spec:
         enabled: true
       priorityClassName: ""
       useMCP: true
-      trustDomain: ""
+      trustDomain: "cluster.local"
       outboundTrafficPolicy:
         mode: ALLOW_ANY
       sds:
         enabled: false
         udsPath: ""
+        token:
+          aud: istio-ca
       meshNetworks: {}
       localityLbSetting:
         enabled: true
@@ -444,7 +446,6 @@ spec:
     security:
       image: citadel
       selfSigned: true # indicate if self-signed CA is used.
-      trustDomain: cluster.local # indicate the domain used in SPIFFE identity URL
       enableNamespacesByDefault: true
       dnsCerts:
         istio-pilot-service-account.istio-control: istio-pilot.istio-control
@@ -581,7 +582,7 @@ spec:
       replicaCount: 1
       image:
         repository: grafana/grafana
-        tag: 6.3.6
+        tag: 6.4.3
       persist: false
       storageClassName: ""
       accessMode: ReadWriteMany
@@ -689,8 +690,8 @@ spec:
     kiali:
       enabled: false
       replicaCount: 1
-      hub: docker.io/kiali
-      tag: v1.4.2
+      hub: quay.io/kiali
+      tag: v1.9
       contextPath: /kiali
       nodeSelector: {}
       podAntiAffinityLabelSelector: []
@@ -709,7 +710,7 @@ spec:
         grafanaURL:
         jaegerURL:
       prometheusNamespace:
-      createDemoSecret: true
+      createDemoSecret: false
       security:
         enabled: false
         cert_file: /kiali-cert/cert-chain.pem

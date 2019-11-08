@@ -479,6 +479,9 @@ message GlobalConfig {
   // Specifies the trust domain that corresponds to the root cert of CA.
   string trustDomain = 34;
 
+  // The trust domain aliases represent the aliases of trustDomain.
+  repeated string trustDomainAliases = 42;
+
   // Controls whether to use of Mesh Configuration Protocol to distribute configuration.
   google.protobuf.BoolValue useMCP = 35;
 
@@ -491,6 +494,8 @@ message GlobalConfig {
   TypeSliceOfMapStringInterface certificates = 40;
 
   google.protobuf.BoolValue operatorManageWebhooks = 41;
+
+  // The next available key is 43
 }
 
 // GlobalLoggingConfig specifies the global logging level settings for the Istio control plane components.
@@ -1101,6 +1106,11 @@ message PrometheusConfig {
   TypeSliceOfMapStringInterface podAntiAffinityLabelSelector = 14;
 
   TypeSliceOfMapStringInterface podAntiAffinityTermLabelSelector = 15;
+
+  // K8s resources settings.
+  //
+  // See https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#resource-requests-and-limits-of-pod-and-container
+  Resources resources = 16;
 }
 
 // Configuration for Prometheus adapter in mixer.
@@ -1337,14 +1347,6 @@ message SecurityConfig {
   // Setting to false if you want to use your own root CA for Citade Deployment.
   google.protobuf.BoolValue selfSigned = 4;
 
-  // The trust domain corresponds to the trust root of a system
-  // Refer to https://github.com/spiffe/spiffe/blob/master/standards/SPIFFE-ID.md#21-trust-domain
-  // Indicate the domain used in SPIFFE identity URL
-  // The default depends on the environment.
-  //   kubernetes: cluster.local
-  //    else:  default dns domain
-  string trustDomain = 5;
-
   // The DNS Certs specifies the customized DNS name and corresponding service account.
   //
   // Example:
@@ -1371,6 +1373,9 @@ message SecurityConfig {
   //
   // See: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
   TypeMapStringInterface podAnnotations = 11;
+
+  // How long workload certs are valid for
+  string workloadCertTtl = 12;
 }
 
 // ServiceConfig is described in istio.io documentation.
@@ -1440,7 +1445,7 @@ message SidecarInjectorConfig {
   // K8s resources settings.
   //
   // See https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#resource-requests-and-limits-of-pod-and-container
-  TypeMapStringInterface resources = 20;
+  Resources resources = 20;
 
   // Enable objectSelector to filter out pods with no need for sidecar before calling istio-sidecar-injector.
   TypeMapStringInterface objectSelector = 21;
