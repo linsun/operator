@@ -80,6 +80,15 @@ var (
 	// Component enablement mapping. Ex "{{.ValueComponent}}.enabled": {"{{.FeatureName}}.Components.{{.ComponentName}}.enabled}", nil},
 	// Feature enablement mapping. Ex: "{{.ValueComponent}}.enabled": {"{{.FeatureName}}.enabled}", nil},
 	componentEnablementPattern = "{{.FeatureName}}.Components.{{.ComponentName}}.Enabled"
+	// specialComponentPath lists cases of component path of values.yaml we need to have special treatment.
+	specialComponentPath = map[string]bool{
+		"mixer":                         true,
+		"mixer.policy":                  true,
+		"mixer.telemetry":               true,
+		"gateways":                      true,
+		"gateways.istio-ingressgateway": true,
+		"gateways.istio-egressgateway":  true,
+	}
 )
 
 // initAPIMapping generate the reverse mapping from original translator apiMapping.
@@ -227,7 +236,7 @@ func (t *ReverseTranslator) setEnablementAndNamespacesFromValue(valueSpec map[st
 		// set feature enablement
 		feVal := featureName + ".Enabled"
 		outFP := util.ToYAMLPath(string(feVal))
-		curEnabled, found, _ := name.GetFromTreePath(root, outFP)
+		curEnabled, found, _ := tpath.GetFromTreePath(root, outFP)
 		if !found {
 			if err := tpath.WriteNode(root, outFP, enabled); err != nil {
 				return err
@@ -292,7 +301,7 @@ func translateHPASpec(inPath string, outPath string, value interface{}, valueTre
 	}
 	for key, newVal := range valMap {
 		valPath := newPS + key
-		asVal, found, err := name.GetFromTreePath(valueTree, util.ToYAMLPath(valPath))
+		asVal, found, err := tpath.GetFromTreePath(valueTree, util.ToYAMLPath(valPath))
 		if found && err == nil {
 			if err := setOutputAndClean(valPath, outPath+newVal, asVal, valueTree, cpSpecTree, true); err != nil {
 				return err
@@ -300,7 +309,7 @@ func translateHPASpec(inPath string, outPath string, value interface{}, valueTre
 		}
 	}
 	valPath := newPS + ".cpu.targetAverageUtilization"
-	asVal, found, err := name.GetFromTreePath(valueTree, util.ToYAMLPath(valPath))
+	asVal, found, err := tpath.GetFromTreePath(valueTree, util.ToYAMLPath(valPath))
 	if found && err == nil {
 		rs := make([]interface{}, 1)
 		rsVal := `
@@ -324,6 +333,12 @@ func translateHPASpec(inPath string, outPath string, value interface{}, valueTre
 apiVersion: apps/v1
 kind: Deployment
 name: istio-%s`
+
+	// need to do special handling for gateways and mixer
+	// ex. because deployment name should be istio-telemetry instead of istio-mixer.telemetry, we need to get rid of the prefix mixer part.
+	if specialComponentPath[newPS] && len(newP) > 2 {
+		newPS = newP[1 : len(newP)-1].String()
+	}
 
 	stString := fmt.Sprintf(stVal, newPS)
 	if err := yaml.Unmarshal([]byte(stString), &st); err != nil {
@@ -390,7 +405,7 @@ func (t *ReverseTranslator) translateK8sTree(valueTree map[string]interface{},
 	cpSpecTree map[string]interface{}) error {
 	for inPath, v := range t.KubernetesMapping {
 		log.Infof("Checking for k8s path %s in helm Value.yaml tree", inPath)
-		m, found, err := name.GetFromTreePath(valueTree, util.ToYAMLPath(inPath))
+		m, found, err := tpath.GetFromTreePath(valueTree, util.ToYAMLPath(inPath))
 		if err != nil {
 			return err
 		}
@@ -494,7 +509,7 @@ func (t *ReverseTranslator) translateTree(valueTree map[string]interface{},
 	cpSpecTree map[string]interface{}) error {
 	for inPath, v := range t.APIMapping {
 		log.Infof("Checking for path %s in helm Value.yaml tree", inPath)
-		m, found, err := name.GetFromTreePath(valueTree, util.ToYAMLPath(inPath))
+		m, found, err := tpath.GetFromTreePath(valueTree, util.ToYAMLPath(inPath))
 		if err != nil {
 			return err
 		}
@@ -533,16 +548,12 @@ func (t *ReverseTranslator) isEnablementPath(path util.Path) bool {
 		return false
 	}
 
-	pstr := path.String()
-	if pstr == "mixer.policy.enabled" || pstr == "mixer.telemetry.enabled" ||
-		pstr == "gateways.enabled" ||
-		pstr == "gateways.istio-ingressgateway.enabled" || pstr == "gateways.istio-egressgateway.enabled" {
+	pf := path[:len(path)-1].String()
+	if specialComponentPath[pf] {
 		return true
 	}
 
-	pf := path[:len(path)-1].String()
 	_, exist := t.ValuesToComponentName[pf]
-
 	return exist
 }
 

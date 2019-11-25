@@ -95,7 +95,7 @@ func mergeICPSWithProfile(icp *v1alpha2.IstioControlPlaneSpec) (*v1alpha2.IstioC
 		if err != nil {
 			return nil, fmt.Errorf("could not read the default profile values for %s: %s", dfn, err)
 		}
-		baseCRYAML, err = helm.OverlayYAML(defaultYAML, baseCRYAML)
+		baseCRYAML, err = util.OverlayYAML(defaultYAML, baseCRYAML)
 		if err != nil {
 			return nil, fmt.Errorf("could not overlay the profile over the default %s: %s", profile, err)
 		}
@@ -110,12 +110,12 @@ func mergeICPSWithProfile(icp *v1alpha2.IstioControlPlaneSpec) (*v1alpha2.IstioC
 	// override from variables that are set during release build time.
 	hub := version.DockerInfo.Hub
 	tag := version.DockerInfo.Tag
-	if hub != "unknown" && tag != "unknown" {
+	if hub != "" && hub != "unknown" && tag != "" && tag != "unknown" {
 		buildHubTagOverlayYAML, err := helm.GenerateHubTagOverlay(hub, tag)
 		if err != nil {
 			return nil, err
 		}
-		baseYAML, err = helm.OverlayYAML(baseYAML, buildHubTagOverlayYAML)
+		baseYAML, err = util.OverlayYAML(baseYAML, buildHubTagOverlayYAML)
 		if err != nil {
 			return nil, err
 		}
@@ -127,7 +127,7 @@ func mergeICPSWithProfile(icp *v1alpha2.IstioControlPlaneSpec) (*v1alpha2.IstioC
 	}
 
 	// Merge base and overlay.
-	mergedYAML, err := helm.OverlayYAML(baseYAML, overlayYAML)
+	mergedYAML, err := util.OverlayYAML(baseYAML, overlayYAML)
 	if err != nil {
 		return nil, fmt.Errorf("could not overlay user config over base: %s", err)
 	}
