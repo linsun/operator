@@ -119,8 +119,10 @@ func (h *VFSRenderer) loadChart() error {
 		if err != nil {
 			return err
 		}
+		// Helm expects unix / separator, but on windows this will be \
+		name := strings.ReplaceAll(stripPrefix(fname, prefix), string(filepath.Separator), "/")
 		bf := &chartutil.BufferedFile{
-			Name: stripPrefix(fname, prefix),
+			Name: name,
 			Data: b,
 		}
 		bfs = append(bfs, bf)
@@ -140,9 +142,9 @@ func BuiltinProfileToFilename(name string) string {
 
 // stripPrefix removes the the given prefix from prefix.
 func stripPrefix(path, prefix string) string {
-	pl := len(strings.Split(prefix, "/"))
-	pv := strings.Split(path, "/")
-	return strings.Join(pv[pl:], "/")
+	pl := len(strings.Split(prefix, string(filepath.Separator)))
+	pv := strings.Split(path, string(filepath.Separator))
+	return strings.Join(pv[pl:], string(filepath.Separator))
 }
 
 // list all the builtin profiles.

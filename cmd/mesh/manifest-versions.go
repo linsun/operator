@@ -55,18 +55,18 @@ func manifestVersionsCmd(rootArgs *rootArgs, versionsArgs *manifestVersionsArgs)
 			}
 			return nil
 		},
-		Run: func(cmd *cobra.Command, args []string) {
-			l := newLogger(rootArgs.logToStdErr, cmd.OutOrStdout(), cmd.OutOrStderr())
-			manifestVersions(rootArgs, versionsArgs, l)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			l := NewLogger(rootArgs.logToStdErr, cmd.OutOrStdout(), cmd.ErrOrStderr())
+			return manifestVersions(rootArgs, versionsArgs, l)
 		}}
 }
 
-func manifestVersions(args *rootArgs, mvArgs *manifestVersionsArgs, l *logger) {
+func manifestVersions(args *rootArgs, mvArgs *manifestVersionsArgs, l *Logger) error {
 	initLogsOrExit(args)
 
 	myVersionMap, err := getVersionCompatibleMap(mvArgs.versionsURI, binversion.OperatorBinaryGoVersion, l)
 	if err != nil {
-		l.logAndFatalf("Failed to retrieve version map, error: %v", err)
+		return fmt.Errorf("failed to retrieve version map, error: %v", err)
 	}
 
 	fmt.Print("\nOperator version is ", binversion.OperatorBinaryGoVersion.String(), ".\n\n")
@@ -79,10 +79,12 @@ func manifestVersions(args *rootArgs, mvArgs *manifestVersionsArgs, l *logger) {
 		fmt.Printf("  %s\n", v.String())
 	}
 	fmt.Println()
+
+	return nil
 }
 
 func getVersionCompatibleMap(versionsURI string, binVersion *goversion.Version,
-	l *logger) (*version.CompatibilityMapping, error) {
+	l *Logger) (*version.CompatibilityMapping, error) {
 	var b []byte
 	var err error
 
@@ -108,7 +110,7 @@ func getVersionCompatibleMap(versionsURI string, binVersion *goversion.Version,
 	return myVersionMap, nil
 }
 
-func loadCompatibleMapFile(versionsURI string, l *logger) ([]byte, error) {
+func loadCompatibleMapFile(versionsURI string, l *Logger) ([]byte, error) {
 	var err error
 	if util.IsHTTPURL(versionsURI) {
 		if b, err := httprequest.Get(versionsURI); err == nil {
