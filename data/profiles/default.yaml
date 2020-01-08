@@ -47,7 +47,7 @@ spec:
               path: /ready
               port: 8080
             initialDelaySeconds: 5
-            periodSeconds: 30
+            periodSeconds: 5
             timeoutSeconds: 5
           resources:
             requests:
@@ -233,10 +233,15 @@ spec:
   # Istio CNI feature
   cni:
     enabled: false
+    components:
+      cni:
+        namespace: kube-system
 
   # Global values passed through to helm global.yaml.
   values:
     global:
+      istiod:
+        enabled: true
       logging:
         level: "default:info"
       logAsJson: false
@@ -568,7 +573,7 @@ spec:
       enabled: true
       replicaCount: 1
       hub: docker.io/prom
-      tag: v2.12.0
+      tag: v2.15.1
       retention: 6h
       scrapeInterval: 15s
       contextPath: /prometheus
@@ -578,8 +583,6 @@ spec:
           - prometheus.local
         annotations:
         tls:
-      security:
-        enabled: true
       nodeSelector: {}
       tolerations: []
       podAntiAffinityLabelSelector: []
@@ -590,7 +593,7 @@ spec:
       replicaCount: 1
       image:
         repository: grafana/grafana
-        tag: 6.4.3
+        tag: 6.5.2
       persist: false
       storageClassName: ""
       accessMode: ReadWriteMany

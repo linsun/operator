@@ -108,22 +108,25 @@ func TestVersions(t *testing.T) {
 			desc: "simple",
 			yamlStr: `
 operatorVersion: 1.3.0
-supportedIstioVersions: 1.3.0
+operatorVersionRange: 1.3.0
 recommendedIstioVersions: 1.3.0
+supportedIstioVersions: 1.3.0
 `,
 		},
 		{
 			desc: "complex",
 			yamlStr: `
 operatorVersion: 1.3.0
-supportedIstioVersions: "> 1.1, < 1.4.0, = 1.5.2"
-recommendedIstioVersions: ">= 1, < 1.4"
+operatorVersionRange: 1.3.0
+recommendedIstioVersions: '>= 1, < 1.4'
+supportedIstioVersions: '> 1.1, < 1.4.0, = 1.5.2'
 `,
 		},
 		{
 			desc: "partial",
 			yamlStr: `
 operatorVersion: 1.3.0
+operatorVersionRange: 1.3.0
 supportedIstioVersions: "> 1.1, < 1.4.0"
 `,
 		},
@@ -184,4 +187,55 @@ func errToString(err error) string {
 		return ""
 	}
 	return err.Error()
+}
+
+func TestIsVersionString(t *testing.T) {
+	tests := []struct {
+		name string
+		ver  string
+		want bool
+	}{
+		{
+			name: "empty",
+			ver:  "",
+			want: false,
+		},
+		{
+			name: "unknown",
+			ver:  "unknown",
+			want: false,
+		},
+		{
+			name: "release branch dev",
+			ver:  "1.4-dev",
+			want: true,
+		},
+		{
+			name: "release",
+			ver:  "1.4.5",
+			want: true,
+		},
+		{
+			name: "incorrect",
+			ver:  "1.4.xxx",
+			want: false,
+		},
+		{
+			name: "dev sha",
+			ver:  "a3703b76cf4745f3d56bf653ed751509be116351",
+			want: false,
+		},
+		{
+			name: "dev sha digit prefix",
+			ver:  "60023b76cf4745f3d56bf653ed751509be116351",
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := IsVersionString(tt.ver); got != tt.want {
+				t.Errorf("IsVersionString() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }

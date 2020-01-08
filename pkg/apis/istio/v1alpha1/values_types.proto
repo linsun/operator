@@ -72,6 +72,8 @@ message CNIConfig {
   TypeMapStringInterface podAnnotations = 10 [deprecated=true];
 
   string psp_cluster_role = 11;
+
+  string logLevel = 12;
 }
 
 // Configuration for CPU target utilization for HorizontalPodAutoscaler target.
@@ -114,6 +116,12 @@ message CertManagerConfig {
   string podDnsPolicy = 10;
 
   TypeMapStringInterface podDnsConfig = 11;
+
+  TypeSliceOfMapStringInterface podAntiAffinityLabelSelector = 12 [deprecated=true];
+
+  TypeSliceOfMapStringInterface podAntiAffinityTermLabelSelector = 13 [deprecated=true];
+
+  TypeSliceOfMapStringInterface tolerations = 14 [deprecated=true];
 }
 
 // Mirrors Resources for unmarshaling.
@@ -267,6 +275,8 @@ message EgressGatewayConfig {
 
   // Enables cross-cluster access using SNI matching.
   ZeroVPNConfig zvpn = 19;
+
+  TypeSliceOfMapStringInterface tolerations = 20 [deprecated=true];
 }
 
 // EnvoyMetricsConfig is a set of configuration options for Envoy metrics.
@@ -322,6 +332,8 @@ message GalleyConfig {
 
   // K8s rolling update strategy
   TypeIntOrStringForPB rollingMaxUnavailable = 10 [deprecated=true];
+
+  TypeSliceOfMapStringInterface tolerations = 11 [deprecated=true];
 }
 
 // GatewayLabelsConfig is a set of Configuration for gateway labels.
@@ -550,7 +562,15 @@ message GlobalConfig {
   // Specifies the Istio control plane’s telemetry Pod IP address or remote cluster DNS resolvable hostname
   string remoteTelemetryAddress = 49;
 
-  // The next available key is 54
+  // Specifies the configution of istiod
+  IstiodConfig istiod = 54;
+  // The next available key is 55
+}
+
+
+message IstiodConfig {
+  // If enabled, all control plane functionality will be handled by a single deployment.
+  google.protobuf.BoolValue enabled = 1;
 }
 
 // GlobalLoggingConfig specifies the global logging level settings for the Istio control plane components.
@@ -659,6 +679,20 @@ message IngressGatewayConfig {
 
   // Ports to explicitly check for readiness
   string applicationPorts = 33;
+
+  string externalTrafficPolicy = 34;
+
+  TypeSliceOfMapStringInterface tolerations = 35 [deprecated=true];
+
+  TypeSliceOfMapStringInterface ingressPorts = 36;
+
+  TypeSliceOfMapStringInterface additionalContainers = 37;
+
+  TypeSliceOfMapStringInterface configVolumes = 38;
+
+  google.protobuf.BoolValue certificates = 39;
+
+  google.protobuf.BoolValue tls = 40;
 }
 
 // Secret Discovery Service (SDS) Configuration for ingress gateway.
@@ -1121,14 +1155,46 @@ message TelemetryConfig {
   // Controls whether telemetry is exported for Pilot.
   google.protobuf.BoolValue enabled = 1;
 
+  // Use telemetry v1.
+  TelemetryV1Config v1 = 2;
+
   // Use telemetry v2.
   TelemetryV2Config v2 = 3;
+}
+
+// Controls whether pilot will configure telemetry v1.
+message TelemetryV1Config {
+  // Controls whether pilot will configure telemetry v1.
+  google.protobuf.BoolValue enabled = 1;
 }
 
 // Controls whether pilot will configure telemetry v2.
 message TelemetryV2Config {
   // Controls whether pilot will configure telemetry v2.
   google.protobuf.BoolValue enabled = 1;
+
+  TelemetryV2PrometheusConfig prometheus = 2;
+
+  TelemetryV2StackDriverConfig stackdriver = 3;
+}
+
+// Conrols telemetry v2 prometheus settings.
+message TelemetryV2PrometheusConfig {
+  // Controls whether stats envoyfilter would be enabled or not.
+  google.protobuf.BoolValue enabled = 1;
+}
+
+// Conrols telemetry v2 stackdriver settings.
+message TelemetryV2StackDriverConfig {
+  google.protobuf.BoolValue enabled = 1;
+
+  google.protobuf.BoolValue logging = 2;
+
+  google.protobuf.BoolValue monitoring = 3;
+
+  google.protobuf.BoolValue topology = 4;
+
+  TypeMapStringInterface configOverride = 5;
 }
 
 // PilotConfigSource describes information about a configuration store inside a
@@ -1443,6 +1509,14 @@ message SecurityConfig {
   // Setting to false if you want to use your own root CA for Citade Deployment.
   google.protobuf.BoolValue selfSigned = 4;
 
+  // The trust domain corresponds to the trust root of a system
+  // Refer to https://github.com/spiffe/spiffe/blob/master/standards/SPIFFE-ID.md#21-trust-domain
+  // Indicate the domain used in SPIFFE identity URL
+  // The default depends on the environment.
+  //   kubernetes: cluster.local
+  //    else:  default dns domain
+  string trustDomain = 5;
+
   // The DNS Certs specifies the customized DNS name and corresponding service account.
   //
   // Example:
@@ -1473,6 +1547,8 @@ message SecurityConfig {
 
   // How long workload certs are valid for
   string workloadCertTtl = 13;
+
+  TypeSliceOfMapStringInterface tolerations = 14 [deprecated=true];
 }
 
 // ServiceConfig is described in istio.io documentation.
@@ -1546,6 +1622,8 @@ message SidecarInjectorConfig {
 
   // Enable objectSelector to filter out pods with no need for sidecar before calling istio-sidecar-injector.
   TypeMapStringInterface objectSelector = 21;
+
+  TypeSliceOfMapStringInterface tolerations = 22 [deprecated=true];
 }
 
 // Configuration for stdio adapter in mixer, recommended for debug usage only.
@@ -1661,6 +1739,8 @@ message TracingConfig {
 
   // See EgressGatewayConfig.
   TypeSliceOfMapStringInterface podAntiAffinityTermLabelSelector = 14 [deprecated=true];
+
+  TypeSliceOfMapStringInterface tolerations = 15 [deprecated=true];
 }
 
 message TracingOpencensusConfig {
@@ -1848,6 +1928,8 @@ message KialiConfig {
 
   // See PodAntiAffinityLabelSelector.
   TypeSliceOfMapStringInterface podAntiAffinityTermLabelSelector = 13 [deprecated=true];
+
+  TypeSliceOfMapStringInterface tolerations = 14 [deprecated=true];
 }
 
 message Values {

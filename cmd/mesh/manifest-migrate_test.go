@@ -28,7 +28,10 @@ func TestManifestMigrate(t *testing.T) {
 		desc string
 	}{
 		{
-			desc: "values",
+			desc: "default_values",
+		},
+		{
+			desc: "overlay_values",
 		},
 	}
 	for _, tt := range tests {
@@ -60,5 +63,5 @@ func TestManifestMigrate(t *testing.T) {
 }
 
 func runManifestMigrate(path string) (string, error) {
-	return runCommand("manifest migrate " + path)
+	return runCommand("manifest migrate --logtostderr " + path)
 }
