@@ -25,7 +25,7 @@ import (
 )
 
 type manifestApplyArgs struct {
-	// inFilename is the path to the input IstioControlPlane CR.
+	// inFilename is the path to the input IstioOperator CR.
 	inFilename string
 	// kubeConfigPath is the path to kube config file.
 	kubeConfigPath string
@@ -40,7 +40,7 @@ type manifestApplyArgs struct {
 	skipConfirmation bool
 	// force proceeds even if there are validation errors
 	force bool
-	// set is a string with element format "path=value" where path is an IstioControlPlane path and the value is a
+	// set is a string with element format "path=value" where path is an IstioOperator path and the value is a
 	// value to set the node at that path to.
 	set []string
 }
@@ -66,9 +66,9 @@ func manifestApplyCmd(rootArgs *rootArgs, maArgs *manifestApplyArgs) *cobra.Comm
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			l := NewLogger(rootArgs.logToStdErr, cmd.OutOrStdout(), cmd.ErrOrStderr())
-			// Warn users if they use `manifest apply` without any config args.
-			if maArgs.inFilename == "" && len(maArgs.set) == 0 && !maArgs.skipConfirmation {
-				if !confirm("This will install the default Istio profile into the cluster. Proceed? (y/N)", cmd.OutOrStdout()) {
+			// Warn users before starting to install Istio
+			if !rootArgs.dryRun && !maArgs.skipConfirmation {
+				if !confirm("This will install Istio into the cluster. Proceed? (y/N)", cmd.OutOrStdout()) {
 					cmd.Print("Cancelled.\n")
 					os.Exit(1)
 				}

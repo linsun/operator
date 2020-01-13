@@ -15,6 +15,8 @@
 package helmreconciler
 
 import (
+	"sync"
+
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -22,8 +24,7 @@ import (
 	"k8s.io/helm/pkg/manifest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"istio.io/operator/pkg/apis/istio/v1alpha2"
-
+	"istio.io/api/operator/v1alpha1"
 	"istio.io/operator/pkg/name"
 )
 
@@ -63,9 +64,9 @@ type PruningDetails interface {
 	// pruned.  To avoid pruning derived resources (which typically inherit the parent's labels), the prune logic
 	// verifies that the annotation keys exist.
 	GetOwnerAnnotations() map[string]string
-	// GetResourceTypes returns the types of resources managed by the operator.  These types are used when selecting
-	// resources to be pruned.
-	GetResourceTypes() (namespaced []schema.GroupVersionKind, nonNamespaced []schema.GroupVersionKind)
+	// GetResourceTypes returns the types of resources managed by the operator and corresponding mutex. These types are used
+	// when selecting resources to be pruned.
+	GetResourceTypes() (map[schema.GroupVersionKind]bool, map[schema.GroupVersionKind]bool, *sync.Mutex)
 }
 
 // ChartManifestsMap is a typedef representing a map of chart-name: []manifest, i.e. the manifests
@@ -146,7 +147,7 @@ type RenderingListener interface {
 	// EndReconcile occurs after reconciliation has completed.  It is similar to EndDelete, but applies to reconciliation.
 	// instance is the custom resource being reconciled
 	// status is the status and errors of components at the end of reconciliation.
-	EndReconcile(instance runtime.Object, status *v1alpha2.InstallStatus) error
+	EndReconcile(instance runtime.Object, status *v1alpha1.InstallStatus) error
 }
 
 // ChartCustomizer defines callbacks used by a listener that manages customizations for a specific chart.

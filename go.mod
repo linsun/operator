@@ -34,8 +34,6 @@ require (
 	github.com/kylelemons/godebug v1.1.0
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/nwaples/rardecode v1.0.0 // indirect
-	github.com/openshift/api v3.9.1-0.20191008181517-e4fd21196097+incompatible // indirect
-	github.com/openshift/cluster-network-operator v0.0.0-20191009144453-fdceef8e1a7b
 	github.com/pierrec/lz4 v2.2.5+incompatible // indirect
 	github.com/pkg/errors v0.8.1
 	github.com/prometheus/client_golang v1.1.0 // indirect
@@ -47,13 +45,13 @@ require (
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	google.golang.org/grpc v1.24.0 // indirect
 	gopkg.in/yaml.v2 v2.2.4
+	istio.io/api v0.0.0-20200111000814-80fb3f4c4923
 	istio.io/pkg v0.0.0-20191029184635-5c2f5ef63692
 	k8s.io/api v0.17.0
 	k8s.io/apiextensions-apiserver v0.17.0
 	k8s.io/apimachinery v0.17.0
 	k8s.io/client-go v0.17.0
 	k8s.io/helm v2.14.3+incompatible
-	k8s.io/kube-proxy v0.17.0 // indirect
 	k8s.io/kubectl v0.17.0
 	k8s.io/utils v0.0.0-20191114184206-e782cd3c129f
 	sigs.k8s.io/controller-runtime v0.4.0

@@ -21,7 +21,8 @@ import (
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"istio.io/operator/pkg/apis/istio/v1alpha2"
+	"istio.io/api/operator/v1alpha1"
+	iop "istio.io/operator/pkg/apis/istio/v1alpha1"
 	"istio.io/operator/pkg/name"
 	"istio.io/operator/pkg/util"
 	"istio.io/pkg/log"
@@ -32,7 +33,7 @@ import (
 type HelmReconciler struct {
 	client             client.Client
 	customizer         RenderingCustomizer
-	instance           *v1alpha2.IstioControlPlane
+	instance           *iop.IstioOperator
 	needUpdateAndPrune bool
 }
 
@@ -46,7 +47,7 @@ type Factory struct {
 // instance is the custom resource to be reconciled/deleted.
 // client is the kubernetes client
 // logger is the logger
-func (f *Factory) New(instance *v1alpha2.IstioControlPlane, client client.Client) (*HelmReconciler, error) {
+func (f *Factory) New(instance *iop.IstioOperator, client client.Client) (*HelmReconciler, error) {
 	delegate, err := f.CustomizerFactory.NewCustomizer(instance)
 	if err != nil {
 		return nil, err
@@ -122,11 +123,11 @@ func (h *HelmReconciler) Reconcile() error {
 
 // processRecursive processes the given manifests in an order of dependencies defined in h. Dependencies are a tree,
 // where a child must wait for the parent to complete before starting.
-func (h *HelmReconciler) processRecursive(manifests ChartManifestsMap) *v1alpha2.InstallStatus {
+func (h *HelmReconciler) processRecursive(manifests ChartManifestsMap) *v1alpha1.InstallStatus {
 	deps, dch := h.customizer.Input().GetProcessingOrder(manifests)
-	out := &v1alpha2.InstallStatus{Status: make(map[string]*v1alpha2.InstallStatus_VersionStatus)}
+	componentStatus := make(map[string]*v1alpha1.InstallStatus_VersionStatus)
 
-	// mu protects the shared InstallStatus out across goroutines
+	// mu protects the shared InstallStatus componentStatus across goroutines
 	var mu sync.Mutex
 	// wg waits for all manifest processing goroutines to finish
 	var wg sync.WaitGroup
@@ -144,37 +145,37 @@ func (h *HelmReconciler) processRecursive(manifests ChartManifestsMap) *v1alpha2
 			}
 
 			// Set status when reconciling starts
-			status := v1alpha2.InstallStatus_RECONCILING
+			status := v1alpha1.InstallStatus_RECONCILING
 			mu.Lock()
-			if _, ok := out.Status[c]; !ok {
-				out.Status[c] = &v1alpha2.InstallStatus_VersionStatus{}
-				out.Status[c].Status = status
+			if _, ok := componentStatus[c]; !ok {
+				componentStatus[c] = &v1alpha1.InstallStatus_VersionStatus{}
+				componentStatus[c].Status = status
 			}
 			mu.Unlock()
 
 			// Process manifests and get the status result
 			errString := ""
 			if len(m) == 0 {
-				status = v1alpha2.InstallStatus_NONE
+				status = v1alpha1.InstallStatus_NONE
 			} else {
-				status = v1alpha2.InstallStatus_HEALTHY
+				status = v1alpha1.InstallStatus_HEALTHY
 				if cnt, err := h.ProcessManifest(m[0]); err != nil {
 					errString = err.Error()
-					status = v1alpha2.InstallStatus_ERROR
+					status = v1alpha1.InstallStatus_ERROR
 				} else if cnt == 0 {
-					status = v1alpha2.InstallStatus_NONE
+					status = v1alpha1.InstallStatus_NONE
 				}
 			}
 
 			// Update status based on the result
 			mu.Lock()
-			if status == v1alpha2.InstallStatus_NONE {
-				delete(out.Status, c)
+			if status == v1alpha1.InstallStatus_NONE {
+				delete(componentStatus, c)
 			} else {
-				out.Status[c].Status = status
-				out.Status[c].StatusString = v1alpha2.InstallStatus_Status_name[int32(status)]
+				componentStatus[c].Status = status
+				componentStatus[c].StatusString = v1alpha1.InstallStatus_Status_name[int32(status)]
 				if errString != "" {
-					out.Status[c].Error = errString
+					componentStatus[c].Error = errString
 				}
 			}
 			mu.Unlock()
@@ -187,6 +188,11 @@ func (h *HelmReconciler) processRecursive(manifests ChartManifestsMap) *v1alpha2
 		}()
 	}
 	wg.Wait()
+
+	out := &v1alpha1.InstallStatus{
+		//TODO: add overall status logic
+		ComponentStatus: componentStatus,
+	}
 
 	return out
 }
@@ -236,12 +242,12 @@ func (h *HelmReconciler) GetCustomizer() RenderingCustomizer {
 }
 
 // GetInstance returns the instance associated with this HelmReconciler
-func (h *HelmReconciler) GetInstance() *v1alpha2.IstioControlPlane {
+func (h *HelmReconciler) GetInstance() *iop.IstioOperator {
 	return h.instance
 }
 
 // SetInstance set the instance associated with this HelmReconciler
-func (h *HelmReconciler) SetInstance(instance *v1alpha2.IstioControlPlane) {
+func (h *HelmReconciler) SetInstance(instance *iop.IstioOperator) {
 	h.instance = instance
 }
 
